@@ -16,7 +16,7 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
 use super::router::AuthIdentity;
 use super::{AppState, ominix_runtime};
-use crate::profiles::{ProfileConfig, UserProfile, mask_secrets};
+use crate::profiles::{ProfileConfig, ProfileStore, UserProfile, mask_secrets};
 
 const DEFAULT_SERVE_LOG_TAIL_N: usize = 200;
 const MAX_SERVE_LOG_TAIL_N: usize = 5_000;
@@ -88,8 +88,13 @@ pub struct UpdateProfileRequest {
     pub enabled: Option<bool>,
     #[serde(default)]
     pub data_dir: Option<Option<String>>,
+    /// Parsed as opaque JSON on purpose: the typed round-trip happens in
+    /// `merge_profile_config_from_body` *after* the raw patch is merged over
+    /// the stored config (an invalid merged result is a 400), so a partial
+    /// nested-section patch (e.g. `{"email":{"smtp_host":…}}` without the
+    /// required `provider`) must still parse here (#1470).
     #[serde(default)]
-    pub config: Option<ProfileConfig>,
+    pub config: Option<serde_json::Value>,
     /// Set or update the email address for OTP login.
     #[serde(default)]
     pub email: Option<String>,
@@ -286,7 +291,7 @@ pub(crate) fn relocate_keychain_backed_secrets(
             env_vars,
             &key,
             profile_id,
-            cfg!(target_os = "macos"),
+            crate::auth::keychain::is_available(),
             crate::auth::keychain::set_secret,
         )
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
@@ -420,7 +425,8 @@ pub async fn update_profile(
     if let Some(data_dir) = req.data_dir {
         profile.data_dir = data_dir;
     }
-    merge_profile_config_from_body(&mut profile.config, &body, false);
+    merge_profile_config_from_body(&mut profile.config, &body, false)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
     // Relocate freshly-entered keychain-backed secrets (e.g. the Vertex SA
     // JSON) into the OS keychain before persisting, so an admin edit can't
     // write a private key into plaintext profile config.
@@ -1119,7 +1125,15 @@ pub async fn test_provider(
     // Gemini 2.5+ "thinking" models consume tokens on internal reasoning,
     // so 16 tokens is too small — they return empty content.  Use 128 for
     // Gemini and keep 16 for everyone else (fast, cheap connectivity check).
-    let max_tokens = if req.provider == "gemini" || req.provider == "vertex" {
+    // Resolve aliases through the registry: the web settings UI historically
+    // sends `google`, which is the registered alias for `gemini`. Treating the
+    // alias as an unrelated provider left the connectivity probe with only 16
+    // output tokens and caused thinking-capable Gemini models to return a
+    // truncated/empty candidate that was then reported as a connection error.
+    let canonical_provider = octos_llm::registry::lookup(&req.provider)
+        .map(|entry| entry.name)
+        .unwrap_or(req.provider.as_str());
+    let max_tokens = if canonical_provider == "gemini" || canonical_provider == "vertex" {
         128
     } else {
         16
@@ -1203,12 +1217,17 @@ pub async fn provider_models(
     }
     // Protocol-aware discovery shared with the AppUI `profile/llm/
     // fetch_models` surface — the strategy resolves from the route (api_type
-    // override, then the family's declared protocol), never from the literal
-    // family id, so the two clients cannot drift.
-    let discovery =
-        octos_llm::discovery::resolve_model_discovery(Some(&req.provider), req.api_type.as_deref());
+    // override, then the family's declared protocol — per-model for families
+    // like r9s that pick the wire protocol by model name), never from the
+    // literal family id, so the two clients cannot drift.
+    let route = octos_llm::discovery::resolve_model_discovery(
+        Some(&req.provider),
+        req.api_type.as_deref(),
+        (!req.model.trim().is_empty()).then_some(req.model.trim()),
+        req.base_url.as_deref(),
+    );
     let outcome = octos_llm::discovery::discover_models(
-        discovery,
+        &route,
         &api_key,
         req.base_url.as_deref(),
         Some(&req.provider),
@@ -1286,23 +1305,35 @@ pub(crate) fn merge_profile_config_from_body(
     config: &mut ProfileConfig,
     body: &str,
     env_vars_authoritative: bool,
-) {
+) -> Result<(), String> {
     let raw: serde_json::Value = serde_json::from_str(body).unwrap_or(serde_json::Value::Null);
-    if let Some(config_patch) = raw.get("config") {
-        if config_patch.is_object() {
-            let mut existing = serde_json::to_value(&mut *config).unwrap_or(serde_json::json!({}));
-            json_merge(&mut existing, config_patch);
-            if env_vars_authoritative {
-                if let Some(env_vars) = config_patch.get("env_vars").filter(|v| v.is_object()) {
-                    if let Some(existing_obj) = existing.as_object_mut() {
-                        existing_obj.insert("env_vars".to_string(), env_vars.clone());
-                    }
-                }
-            }
-            if let Ok(merged) = serde_json::from_value(existing) {
-                *config = merged;
+    let Some(config_patch) = raw.get("config") else {
+        return Ok(());
+    };
+    if config_patch.is_null() {
+        return Ok(());
+    }
+    if !config_patch.is_object() {
+        return Err("config must be an object".into());
+    }
+    let mut existing = serde_json::to_value(&mut *config).unwrap_or(serde_json::json!({}));
+    json_merge(&mut existing, config_patch);
+    if env_vars_authoritative {
+        if let Some(env_vars) = config_patch.get("env_vars").filter(|v| v.is_object()) {
+            if let Some(existing_obj) = existing.as_object_mut() {
+                existing_obj.insert("env_vars".to_string(), env_vars.clone());
             }
         }
+    }
+    // The request body parses `config` as opaque JSON (see UpdateProfileRequest),
+    // so this typed round-trip is the only validation gate: an invalid merged
+    // result must surface as an error instead of silently dropping the patch.
+    match serde_json::from_value(existing) {
+        Ok(merged) => {
+            *config = merged;
+            Ok(())
+        }
+        Err(e) => Err(format!("invalid config: {e}")),
     }
 }
 
@@ -1820,6 +1851,48 @@ pub(crate) fn validate_channel_credentials(
     Ok(())
 }
 
+/// The secret-relocation hook applied to a profile's env vars before they are
+/// persisted — the signature of [`relocate_keychain_backed_secrets`]. Carried
+/// as a parameter so tests can drive the failure path without writing to the
+/// developer's keychain.
+pub(crate) type RelocateSecretsHook =
+    fn(&mut std::collections::HashMap<String, String>, &str) -> Result<(), (StatusCode, String)>;
+
+/// Apply freshly supplied sub-account env vars, relocating keychain-backed
+/// secrets (e.g. the Vertex SA JSON) into the OS keychain before the save so a
+/// sub-account never writes a private key to plaintext config. The store has
+/// already persisted the fresh profile by the time this runs, so a relocation
+/// failure rolls the profile back — otherwise the API would report "creation
+/// failed" while leaving a sub-account whose id can never be retried ("already
+/// exists", #1472).
+pub(crate) fn apply_sub_account_env_vars(
+    store: &ProfileStore,
+    sub: &mut UserProfile,
+    env_vars: std::collections::HashMap<String, String>,
+    relocate: RelocateSecretsHook,
+) -> Result<(), (StatusCode, String)> {
+    sub.config.env_vars = env_vars;
+    let sub_id = sub.id.clone();
+    if let Err(e) = relocate(&mut sub.config.env_vars, &sub_id) {
+        // Roll the just-created profile back: the sub-account was saved
+        // keychain-less minutes ago and nothing else references it yet, so
+        // removing it restores the pre-request state instead of stranding a
+        // half-configured id behind "already exists".
+        if let Err(rollback) = store.delete(&sub.id) {
+            tracing::error!(
+                profile = %sub.id,
+                error = %rollback,
+                "failed to roll back sub-account after secret relocation failure"
+            );
+        }
+        return Err(e);
+    }
+    sub.updated_at = Utc::now();
+    store
+        .save(sub)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+}
+
 /// POST /api/admin/profiles/:id/accounts — Create a sub-account.
 pub async fn create_sub_account(
     State(state): State<Arc<AppState>>,
@@ -1853,15 +1926,12 @@ pub async fn create_sub_account(
 
     // Set channel-specific env vars if provided
     if !req.env_vars.is_empty() {
-        sub.config.env_vars = req.env_vars;
-        // Relocate keychain-backed secrets (e.g. the Vertex SA JSON) before
-        // persisting so a sub-account never writes a private key to disk.
-        let sub_id = sub.id.clone();
-        relocate_keychain_backed_secrets(&mut sub.config.env_vars, &sub_id)?;
-        sub.updated_at = Utc::now();
-        store
-            .save(&sub)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        apply_sub_account_env_vars(
+            store,
+            &mut sub,
+            req.env_vars,
+            relocate_keychain_backed_secrets,
+        )?;
     }
 
     // Create a User entry so the sub-account can log in via OTP
@@ -5511,14 +5581,35 @@ mod tests {
         assert!(!base_url_targets_link_local("not a url"));
     }
 
+    // Native macOS Keychain writes need an explicit integration fixture;
+    // ordinary unit tests must never write into the developer's login store.
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn relocate_keychain_backed_secrets_never_persists_raw_vertex_json_off_macos() {
-        // The shared helper used by every profile/sub-account save path must
-        // refuse a raw SA JSON on a non-macOS host (where keychain storage
-        // isn't available) rather than let it fall through to plaintext config.
-        // On macOS it would relocate to the keychain instead, so only assert on
-        // the non-macOS path (the one CI runs and the plaintext risk lives on).
-        if cfg!(target_os = "macos") {
+        #[cfg(target_os = "linux")]
+        let _secrets_root =
+            crate::auth::keychain::test_override_secrets_root(tempfile::tempdir().unwrap().keep());
+        // #2234/45a — the availability predicate is now `keychain::is_available()`
+        // (true on Linux: the file backend exists), NOT `cfg!(macos)`. The
+        // never-plaintext contract holds where NO backend exists (unsupported
+        // platforms); on Linux the raw JSON is legitimately relocated into the
+        // file store and the env slot becomes a marker.
+        if crate::auth::keychain::is_available() {
+            // Store-backed host (macOS keychain / linux file): relocation
+            // succeeds and the plaintext is replaced by a marker.
+            let mut env = std::collections::HashMap::new();
+            env.insert(
+                "VERTEX_SA_JSON".to_string(),
+                r#"{"type":"service_account","private_key":"x","project_id":"p"}"#.to_string(),
+            );
+            relocate_keychain_backed_secrets(&mut env, "sub-account-1")
+                .expect("store-backed host relocates raw SA JSON");
+            let stored = env.get("VERTEX_SA_JSON").expect("slot present");
+            assert!(
+                !stored.contains("private_key"),
+                "raw JSON must not persist as plaintext; got: {stored}"
+            );
+            assert!(stored.contains("keychain"), "marker present: {stored}");
             return;
         }
         let mut env = std::collections::HashMap::new();
@@ -5529,31 +5620,205 @@ mod tests {
         let res = relocate_keychain_backed_secrets(&mut env, "sub-account-1");
         assert!(
             res.is_err(),
-            "raw VERTEX_SA_JSON must be rejected off macOS, never saved as plaintext"
+            "raw VERTEX_SA_JSON must be rejected on hosts with no secret store"
         );
         // The raw value is left untouched (the caller bails before saving).
         assert!(env.get("VERTEX_SA_JSON").unwrap().starts_with('{'));
     }
 
+    #[cfg(not(target_os = "macos"))]
     #[test]
     fn relocate_rejects_service_account_json_under_custom_env_name_off_macos() {
         // The dashboard "Custom" bypass: SA JSON pasted under VERTEX_API_KEY
-        // (not the whitelisted name) must still be caught by content detection
-        // and rejected off macOS — never written to plaintext config.
-        if cfg!(target_os = "macos") {
-            return;
-        }
+        // (not the whitelisted name) must still be caught by content
+        // detection — never written to plaintext config.
+        //
+        // #2234/45a contract (same shape as the twin at ~L5533): the
+        // availability predicate is `keychain::is_available()`, NOT
+        // `cfg!(macos)`. On a store-backed host (linux file backend with an
+        // INJECTED temp root) the JSON is legitimately relocated: Ok, the
+        // slot becomes a keychain marker, the raw value never remains.
+        // Hosts with NO backend keep the rejection.
+        #[cfg(target_os = "linux")]
+        let _secrets_root =
+            crate::auth::keychain::test_override_secrets_root(tempfile::tempdir().unwrap().keep());
         let mut env = std::collections::HashMap::new();
         env.insert(
             "VERTEX_API_KEY".to_string(),
             r#"{"type":"service_account","private_key":"x"}"#.to_string(),
         );
         let res = relocate_keychain_backed_secrets(&mut env, "tenant-1");
-        assert!(
-            res.is_err(),
-            "SA JSON under a custom env name must be rejected off macOS"
+        let slot = env.get("VERTEX_API_KEY").expect("slot present");
+        if crate::auth::keychain::is_available() {
+            assert!(
+                res.is_ok(),
+                "store-backed host relocates SA JSON under a custom name"
+            );
+            assert!(
+                crate::auth::keychain::is_marker(slot),
+                "slot must be a keychain marker, got: {slot}"
+            );
+            assert!(
+                !slot.contains("private_key"),
+                "the raw private key must never remain in the slot"
+            );
+        } else {
+            assert!(
+                res.is_err(),
+                "SA JSON under a custom env name must be rejected with no store"
+            );
+            assert!(slot.starts_with('{'), "raw value left untouched");
+        }
+    }
+
+    // #1472 test fixture: a persisted parent profile plus a fresh (already
+    // saved, env-less) sub-account, i.e. the state `create_sub_account`
+    // handlers have when they reach the env-var step.
+    fn parent_profile() -> UserProfile {
+        UserProfile {
+            id: "parent".into(),
+            name: "Parent".into(),
+            enabled: true,
+            data_dir: None,
+            parent_id: None,
+            public_subdomain: None,
+            config: ProfileConfig::default(),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+
+    fn fresh_sub_account_with_parent(store: &ProfileStore) -> UserProfile {
+        store.save(&parent_profile()).unwrap();
+        store
+            .create_sub_account(
+                "parent",
+                "sub1",
+                "sub1",
+                "Sub",
+                vec![],
+                crate::profiles::GatewaySettings::default(),
+            )
+            .unwrap()
+    }
+
+    // #1472: the store has already persisted the fresh sub-account when a
+    // keychain-backed secret fails to relocate (raw Vertex SA JSON on a host
+    // with no secret store, or a keychain write error) — the failed creation
+    // must roll the profile back so retrying the same id doesn't hit
+    // "already exists".
+    #[test]
+    fn should_roll_back_fresh_sub_account_when_secret_relocation_fails() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ProfileStore::open_unified(dir.path()).unwrap();
+        let mut sub = fresh_sub_account_with_parent(&store);
+        let sub_id = sub.id.clone();
+
+        let res = apply_sub_account_env_vars(
+            &store,
+            &mut sub,
+            std::collections::HashMap::from([(
+                "VERTEX_SA_JSON".to_string(),
+                r#"{"type":"service_account","private_key":"x"}"#.to_string(),
+            )]),
+            |_env_vars, _profile_id| {
+                Err((
+                    StatusCode::BAD_REQUEST,
+                    "VERTEX_SA_JSON: keychain-backed credential storage is unavailable".into(),
+                ))
+            },
         );
-        assert!(env.get("VERTEX_API_KEY").unwrap().starts_with('{'));
+
+        assert_eq!(res.unwrap_err().0, StatusCode::BAD_REQUEST);
+        assert!(
+            store.get(&sub_id).unwrap().is_none(),
+            "failed creation must not strand the sub-account"
+        );
+        store
+            .create_sub_account(
+                "parent",
+                "sub1",
+                "sub1",
+                "Sub",
+                vec![],
+                crate::profiles::GatewaySettings::default(),
+            )
+            .expect("retrying the same id must succeed after the rollback");
+    }
+
+    // The happy path is unchanged: benign env vars (nothing needing
+    // relocation) pass through the production relocate hook untouched and are
+    // persisted on the sub-account.
+    #[test]
+    fn should_persist_env_vars_when_nothing_needs_relocation() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = ProfileStore::open_unified(dir.path()).unwrap();
+        let mut sub = fresh_sub_account_with_parent(&store);
+        let sub_id = sub.id.clone();
+
+        let res = apply_sub_account_env_vars(
+            &store,
+            &mut sub,
+            std::collections::HashMap::from([("DEPLOY_ENV".to_string(), "production".to_string())]),
+            relocate_keychain_backed_secrets,
+        );
+
+        assert!(res.is_ok());
+        let saved = store.get(&sub_id).unwrap().expect("sub-account persisted");
+        assert_eq!(
+            saved.config.env_vars.get("DEPLOY_ENV").map(String::as_str),
+            Some("production")
+        );
+    }
+
+    // #1472 wiring: the admin create path routes env vars through the shared
+    // helper — benign vars (nothing to relocate) still land on the saved
+    // sub-account.
+    #[tokio::test]
+    async fn should_create_sub_account_with_env_vars_via_admin_handler() {
+        use crate::api::AppState;
+        use std::sync::Arc;
+
+        let dir = tempfile::tempdir().unwrap();
+        let profile_store = Arc::new(ProfileStore::open_unified(dir.path()).unwrap());
+        let state = AppState {
+            profile_store: Some(profile_store.clone()),
+            process_manager: Some(Arc::new(crate::process_manager::ProcessManager::new(
+                profile_store.clone(),
+            ))),
+            ..AppState::empty_for_tests()
+        };
+        profile_store.save(&parent_profile()).unwrap();
+
+        let (status, Json(resp)) = create_sub_account(
+            axum::extract::State(Arc::new(state)),
+            axum::extract::Path("parent".into()),
+            axum::extract::Json(CreateSubAccountRequest {
+                sub_account_id: "sub1".into(),
+                name: "Sub".into(),
+                public_subdomain: "sub1".into(),
+                email: None,
+                channels: vec![],
+                gateway: None,
+                env_vars: std::collections::HashMap::from([(
+                    "DEPLOY_ENV".to_string(),
+                    "production".to_string(),
+                )]),
+            }),
+        )
+        .await
+        .expect("creation succeeds");
+
+        assert_eq!(status, StatusCode::CREATED);
+        assert_eq!(resp.profile.id, "parent--sub1");
+        let saved = profile_store
+            .get("parent--sub1")
+            .unwrap()
+            .expect("sub-account persisted");
+        assert_eq!(
+            saved.config.env_vars.get("DEPLOY_ENV").map(String::as_str),
+            Some("production")
+        );
     }
 
     #[test]
@@ -5580,7 +5845,8 @@ mod tests {
             &mut config,
             r#"{"config":{"env_vars":{"SMTP_PASSWORD":"new"}}}"#,
             false,
-        );
+        )
+        .unwrap();
 
         assert_eq!(
             config.env_vars.get("SMTP_PASSWORD").map(String::as_str),
@@ -5601,17 +5867,47 @@ mod tests {
         config.env_vars.insert("A".into(), "a".into());
         config.env_vars.insert("B".into(), "b".into());
 
-        merge_profile_config_from_body(&mut config, r#"{"config":{"env_vars":{"A":"a2"}}}"#, true);
+        merge_profile_config_from_body(&mut config, r#"{"config":{"env_vars":{"A":"a2"}}}"#, true)
+            .unwrap();
         assert_eq!(config.env_vars.get("A").map(String::as_str), Some("a2"));
         assert!(
             !config.env_vars.contains_key("B"),
             "authoritative replace drops omitted keys"
         );
 
-        merge_profile_config_from_body(&mut config, r#"{"config":{"env_vars":{}}}"#, true);
+        merge_profile_config_from_body(&mut config, r#"{"config":{"env_vars":{}}}"#, true).unwrap();
         assert!(
             config.env_vars.is_empty(),
             "an explicit empty map clears all entries"
+        );
+    }
+
+    // The request struct parses `config` as opaque JSON, so the merged
+    // typed round-trip is the only validation gate: patches that produce an
+    // invalid config must error (the handlers map this to 400) instead of
+    // silently dropping the patch. A literal `null` config stays a no-op.
+    #[test]
+    fn merge_config_rejects_invalid_patches() {
+        let mut config = ProfileConfig::default();
+        assert!(merge_profile_config_from_body(&mut config, r#"{"config":null}"#, false).is_ok());
+
+        let err =
+            merge_profile_config_from_body(&mut config, r#"{"config":42}"#, false).unwrap_err();
+        assert_eq!(err, "config must be an object");
+
+        // Merges fine as JSON but the result fails ProfileConfig's typed
+        // deserialization (`smtp_port` must be a number).
+        let err = merge_profile_config_from_body(
+            &mut config,
+            r#"{"config":{"email":{"provider":"smtp","smtp_port":"abc"}}}"#,
+            false,
+        )
+        .unwrap_err();
+        assert!(err.starts_with("invalid config:"), "got: {err}");
+        assert_eq!(
+            config,
+            ProfileConfig::default(),
+            "failed merge must not mutate"
         );
     }
 

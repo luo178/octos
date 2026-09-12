@@ -44,6 +44,12 @@ Octos is a Rust-native AI agent platform that runs in three modes:
 - **`octos gateway`** — A single gateway instance serving messaging channels (Telegram, Discord, DingTalk, Slack, WhatsApp, Matrix, Feishu, Email, WeChat, WeCom, WeCom Bot, QQ Bot, Twilio).
 - **`octos chat`** — Interactive CLI chat for development and testing.
 
+Chat and `octos acp` use the same OUP session runtime as OctosCode, via an
+in-process connection. Both require the default `api` feature; no extra server
+process or network listener is required. They share OUP history, compaction,
+permissions and cancellation. ACP supports `session/load` replay and typed tool
+permissions; structured OUP user questions remain a terminal/OctosCode feature.
+
 ### Architecture
 
 ```
@@ -55,7 +61,7 @@ octos serve (control plane + dashboard, ~140 REST endpoints)
        │
        ├── LLM Provider (15 providers via AdaptiveRouter → ProviderChain → RetryProvider)
        ├── Tool Registry (~50 built-ins + plugins + 9 user-facing app-skills)
-       │     LRU deferral keeps ~15 active; spawn_only auto-routes to background
+       │     Full enabled tool set sent each turn; spawn_only auto-routes to background
        ├── Sandbox (bwrap / sandbox-exec / Docker / Windows AppContainer)
        ├── Pipeline Engine (DOT graphs, per-node model, bounded fan-out)
        ├── Swarm Dispatcher (/api/swarm/dispatch — fan-out to N sub-agents)
@@ -1834,6 +1840,10 @@ octos skills install user/repo --force
 octos skills --profile my-bot install user/repo
 ```
 
+The path after `user/repo` is resolved against the repository root, so a skill
+kept in a nested directory is addressed by its full path (e.g., a skill at
+`skills/my-skill` installs with `octos skills install user/repo/skills/my-skill`).
+
 **Installation process:**
 1. Tries to download pre-built binary from the skill registry (SHA-256 verified)
 2. Falls back to `cargo build --release` if `Cargo.toml` is present
@@ -2141,7 +2151,7 @@ Bot: [uses translate tool with text="Hello world", target_lang="JA"]
   ],
 
   // Agent settings
-  "max_iterations": 50,
+  "max_iterations": 0, // Unlimited interactive turn; spawn/MCP remain bounded
 
   // Embedding (for vector search in memory).
   // Remote, OpenAI-compatible:
@@ -2173,8 +2183,28 @@ Bot: [uses translate tool with text="Hello world", target_lang="JA"]
   // Hooks
   "hooks": [],
 
-  // MCP servers
-  "mcp_servers": [],
+  // MCP servers — external tool providers octos connects to as a client.
+  // stdio: command + args (+ optional env). HTTP: url (+ headers, or oauth).
+  "mcp_servers": [
+    // {
+    //   "command": "/path/to/server",   // stdio transport
+    //   "args": ["serve", "--root", "/path/to/repo"],
+    //   // stdio children get a SANITIZED environment: only names listed in
+    //   // this map are forwarded, and injection vectors (LD_PRELOAD,
+    //   // DYLD_INSERT_LIBRARIES, NODE_OPTIONS, …) are stripped even from it.
+    //   // A server expecting inherited credentials fails silently — pass
+    //   // keys explicitly here or let the server read its own secrets file.
+    //   "env": {},
+    //   // "safe" (default) runs this server's tools concurrently;
+    //   // "exclusive" serializes them — right for a single-device driver or
+    //   // any one-at-a-time resource. Unknown values fail safe to exclusive.
+    //   "concurrency_class": "exclusive"
+    // },
+    // { "url": "https://mcp.example.com/mcp", "oauth": true, "scopes": [] }
+    // Timeouts: 30s handshake, 60s per tools/call — long-running work should
+    // be started detached by the server (return a handle) and polled via
+    // read-only tools.
+  ],
 
   // Sandbox — see docs/SANDBOX.md for full reference.
   // Backends: bwrap (Linux), sandbox-exec (macOS), AppContainer (Windows,
@@ -2206,6 +2236,11 @@ Bot: [uses translate tool with text="Hello world", target_lang="JA"]
 
 | Variable | Description |
 |----------|-------------|
+| **Long-running turns** | |
+| `OCTOS_CONVERGENCE_LLM_CALLS` | Tools-disabled reflection interval by LLM calls (default `20`) |
+| `OCTOS_CONVERGENCE_ACTIVE_TOKENS` | Reflection interval by uncached input + output tokens (default `100000`) |
+| `OCTOS_CONVERGENCE_SECS` | Reflection interval by elapsed seconds (default `300`) |
+| `OCTOS_FILE_CHURN_THRESHOLD` | Successful edits to one file before an early reflection; the second threshold also requests model/provider escalation (default `5`) |
 | **LLM Providers** | |
 | `ANTHROPIC_API_KEY` | Anthropic (Claude) API key |
 | `OPENAI_API_KEY` | OpenAI API key |
