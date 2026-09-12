@@ -33,23 +33,22 @@ use octos_core::ui_protocol::{
     ContextNormalizationReportedEvent, CronListParams, CronToggleParams, EnvelopeTokenUsage,
     EnvelopeV2, EnvelopeV2Notification, FileRef, HydratedMessage, HydratedTurn, InputItem,
     MemoryEntityParams, MemoryOverviewParams, MessageDeltaEvent, MessageMeta, OutputCursor,
-    Payload, PayloadV2, PeerClosedEvent, PeerStagedEvent, ReplayLossyEvent, RpcError,
-    RpcErrorResponse, RpcRequest, RpcResponse, SESSION_HYDRATE_INCLUDE_MAX,
-    SESSION_MESSAGES_PAGE_DEFAULT_LIMIT, SESSION_MESSAGES_PAGE_MAX_LIMIT,
-    SESSION_MESSAGES_PAGE_MAX_OFFSET, SESSION_TITLE_SET_MAX_CHARS, SessionBtwParams,
-    SessionDeleteParams, SessionFilesListParams, SessionHydrateParams, SessionHydrateResult,
-    SessionListParams, SessionMessagesPageParams, SessionOpenParams, SessionOpenResult,
-    SessionOpened, SessionOrchestrationEvent, SessionRollbackParams, SessionRollbackResult,
-    SessionSnapshotParams, SessionStatusGetParams, SessionTasksListParams, SessionTitleSetParams,
-    SessionWorkspaceGetParams, SkillActionJobUpdatedEvent, SystemStatusGetParams,
-    TaskArtifactListParams, TaskArtifactListResult, TaskArtifactReadParams, TaskArtifactReadResult,
-    TaskArtifactRecord, TaskCancelParams, TaskCancelResult, TaskListEntry, TaskListParams,
-    TaskListResult, TaskOutputDeltaEvent, TaskRestartFromNodeParams, TaskRestartFromNodeResult,
-    TaskRuntimeState as UiTaskRuntimeState, TaskUpdatedEvent, ThreadGraphEntry,
-    ThreadGraphGetParams, ThreadGraphGetResult, ToolCompletedEvent, ToolProgressEvent,
-    ToolStartedEvent, TurnCompletedEvent, TurnErrorEvent, TurnErrorPartialResult, TurnId,
-    TurnInterruptParams, TurnInterruptResult, TurnLifecycleState, TurnSessionResult,
-    TurnStartParams, TurnStateGetParams, TurnStateGetResult, TurnTerminalError,
+    PayloadV2, PeerClosedEvent, PeerStagedEvent, ReplayLossyEvent, RpcError, RpcErrorResponse,
+    RpcRequest, RpcResponse, SESSION_HYDRATE_INCLUDE_MAX, SESSION_MESSAGES_PAGE_DEFAULT_LIMIT,
+    SESSION_MESSAGES_PAGE_MAX_LIMIT, SESSION_MESSAGES_PAGE_MAX_OFFSET, SESSION_TITLE_SET_MAX_CHARS,
+    SessionBtwParams, SessionDeleteParams, SessionFilesListParams, SessionHydrateParams,
+    SessionHydrateResult, SessionListParams, SessionMessagesPageParams, SessionOpenParams,
+    SessionOpenResult, SessionOpened, SessionOrchestrationEvent, SessionRollbackParams,
+    SessionRollbackResult, SessionSnapshotParams, SessionStatusGetParams, SessionTasksListParams,
+    SessionTitleSetParams, SessionWorkspaceGetParams, SkillActionJobUpdatedEvent,
+    SystemStatusGetParams, TaskArtifactListParams, TaskArtifactListResult, TaskArtifactReadParams,
+    TaskArtifactReadResult, TaskArtifactRecord, TaskCancelParams, TaskCancelResult, TaskListEntry,
+    TaskListParams, TaskListResult, TaskOutputDeltaEvent, TaskRestartFromNodeParams,
+    TaskRestartFromNodeResult, TaskRuntimeState as UiTaskRuntimeState, TaskUpdatedEvent,
+    ThreadGraphEntry, ThreadGraphGetParams, ThreadGraphGetResult, ToolCompletedEvent,
+    ToolProgressEvent, ToolStartedEvent, TurnCompletedEvent, TurnErrorEvent,
+    TurnErrorPartialResult, TurnId, TurnInterruptParams, TurnInterruptResult, TurnLifecycleState,
+    TurnSessionResult, TurnStartParams, TurnStateGetParams, TurnStateGetResult, TurnTerminalError,
     TurnTerminalOutcome, UI_PROTOCOL_FEATURE_APPROVAL_TYPED_V1,
     UI_PROTOCOL_FEATURE_AUXILIARY_REST_TO_WS_V1, UI_PROTOCOL_FEATURE_BACKGROUND_ACTIVITY_V1,
     UI_PROTOCOL_FEATURE_CODING_AGENT_CONTROL_V1, UI_PROTOCOL_FEATURE_CODING_AUTONOMY_V1,
@@ -58,19 +57,19 @@ use octos_core::ui_protocol::{
     UI_PROTOCOL_FEATURE_CONTEXT_SEMANTIC_CACHE_V1, UI_PROTOCOL_FEATURE_FILE_ATTACHED_V1,
     UI_PROTOCOL_FEATURE_HARNESS_TASK_ARTIFACTS_V1, UI_PROTOCOL_FEATURE_HARNESS_TASK_CONTROL_V1,
     UI_PROTOCOL_FEATURE_PANE_SNAPSHOTS_V1, UI_PROTOCOL_FEATURE_PLAN_TODOS_V1,
-    UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V1, UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V2,
-    UI_PROTOCOL_FEATURE_REVIEW_START_V1, UI_PROTOCOL_FEATURE_SESSION_HYDRATE_V1,
-    UI_PROTOCOL_FEATURE_SESSION_SANDBOX_V1, UI_PROTOCOL_FEATURE_SESSION_WORKSPACE_CWD_V1,
-    UI_PROTOCOL_FEATURE_SPAWN_COMPLETE_V1, UI_PROTOCOL_FEATURE_THREAD_GRAPH_V1,
-    UI_PROTOCOL_FEATURE_TURN_STATE_GET_V1, UI_PROTOCOL_FEATURE_TURN_STEER_DROPPED_V1,
-    UI_PROTOCOL_FEATURE_USER_QUESTION_V1, UI_PROTOCOL_FEATURE_VOICE_AUDIO_V1, UiAgentRecord,
-    UiArtifactPaneItem, UiArtifactPaneSnapshot, UiCommand, UiContextCompactionRecord,
-    UiContextNormalizationReport, UiContextState, UiCursor, UiFileMutationNotice, UiGitHistoryItem,
-    UiGitPaneSnapshot, UiGitStatusItem, UiNotification, UiPaneSnapshot, UiPaneSnapshotLimitation,
-    UiProgressEvent, UiProgressMetadata, UiProtocolCapabilities, UiRpcResult, UiWorkspacePaneEntry,
-    UiWorkspacePaneSnapshot, UnsupportedCapabilityReport, UserQuestionRequestedEvent,
-    UserQuestionRespondParams, VoiceAudioChunkEvent, approval_cancelled_reasons, approval_kinds,
-    hydrate_sections, progress_kinds, thread_status,
+    UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V2, UI_PROTOCOL_FEATURE_REVIEW_START_V1,
+    UI_PROTOCOL_FEATURE_SESSION_HYDRATE_V1, UI_PROTOCOL_FEATURE_SESSION_SANDBOX_V1,
+    UI_PROTOCOL_FEATURE_SESSION_WORKSPACE_CWD_V1, UI_PROTOCOL_FEATURE_SPAWN_COMPLETE_V1,
+    UI_PROTOCOL_FEATURE_THREAD_GRAPH_V1, UI_PROTOCOL_FEATURE_TURN_STATE_GET_V1,
+    UI_PROTOCOL_FEATURE_TURN_STEER_DROPPED_V1, UI_PROTOCOL_FEATURE_USER_QUESTION_V1,
+    UI_PROTOCOL_FEATURE_VOICE_AUDIO_V1, UiAgentRecord, UiArtifactPaneItem, UiArtifactPaneSnapshot,
+    UiCommand, UiContextCompactionRecord, UiContextNormalizationReport, UiContextState, UiCursor,
+    UiFileMutationNotice, UiGitHistoryItem, UiGitPaneSnapshot, UiGitStatusItem, UiNotification,
+    UiPaneSnapshot, UiPaneSnapshotLimitation, UiProgressEvent, UiProgressMetadata,
+    UiProtocolCapabilities, UiRpcResult, UiWorkspacePaneEntry, UiWorkspacePaneSnapshot,
+    UnsupportedCapabilityReport, UserQuestionRequestedEvent, UserQuestionRespondParams,
+    VoiceAudioChunkEvent, approval_cancelled_reasons, approval_kinds, hydrate_sections,
+    progress_kinds, thread_status,
 };
 use octos_core::{
     AgentId, InboundMessage, MAIN_PROFILE_ID, Message, MessageOrigin, MessageRole, SessionKey,
@@ -131,8 +130,8 @@ use crate::autonomy::agent_orchestrator::{
     LoopListRequest, MonitorControlKind, MonitorControlRequest, MonitorCreateRequest,
     MonitorListRequest, NativeSpecialistAppUiEvent, NativeSpecialistLaunchRequest,
     default_agent_orchestrator, master_continuation_prompt, master_continuation_reason_name,
-    monitor_invalid_spec_error, parse_agent_output_cursor, run_goal_completion_verifier_with_usage,
-    upsert_background_task_agent, wire_key_from_goal_key,
+    monitor_invalid_spec_error, parse_agent_output_cursor, upsert_background_task_agent,
+    wire_key_from_goal_key,
 };
 use crate::autonomy::master_continuation_scheduler::{
     MasterContinuationReason, MasterContinuationRuntimeState, QueuedMasterContinuation,
@@ -1932,15 +1931,6 @@ struct ConnectionUiFeatures {
     /// `background/activity`, so a client that cannot render it never sees an
     /// "unknown notification" (the ui-protocol v2 migration trap).
     background_activity: bool,
-    /// UPCR-2026-014 M9-γ `projection.envelope.v1` negotiated. When set,
-    /// the client opts in to the historical v1 envelope shape (spec
-    /// § 14) for projected events. γ-1 wires capability negotiation
-    /// only — no emit site references this flag yet, and legacy
-    /// `message/delta`, `tool/*`, and
-    /// `turn/completed` notifications continue to flow on the wire.
-    /// γ-2 (follow-up) gates emission on this flag; γ-3 deletes the
-    /// legacy notifications.
-    projection_envelope: bool,
     /// Stage 1 `projection.envelope.v2` negotiated. This is deliberately
     /// independent from the v1 flag and defaults to false on every transport.
     /// When set, the connection receives the cursor-stamped v2 projection
@@ -2046,11 +2036,6 @@ impl ConnectionUiFeatures {
                 query,
                 UI_PROTOCOL_FEATURE_BACKGROUND_ACTIVITY_V1,
             ),
-            projection_envelope: has_ui_feature(
-                headers,
-                query,
-                UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V1,
-            ),
             projection_envelope_v2: has_ui_feature(
                 headers,
                 query,
@@ -2131,21 +2116,6 @@ impl ConnectionUiFeatures {
             voice_asr_admission_v1: true,
             plan_todos: true,
             background_activity: true,
-            // Do NOT auto-enable `projection.envelope.v1` for stdio
-            // connections. Legacy `turn/completed` is the turn-lifecycle
-            // source for clients that do not consume `projection/envelope`
-            // (e.g. the octoscode over stdio, which clears its turn-active
-            // state — `live_reply`, backing the send-gate — ONLY on legacy
-            // `turn/completed`). The γ-cutover mutual-exclusion gate in
-            // `live_event_passes_capability_filter` DROPS legacy
-            // `turn/completed` whenever `projection_envelope` is true, so
-            // auto-enabling envelopes here suppresses the only lifecycle
-            // signal such clients understand and wedges them (every message
-            // after turn 1 queues "after active turn" forever). A stdio
-            // client that genuinely consumes envelopes can still opt in via
-            // `client_hello` (`from_requested_feature_tokens`), so this is a
-            // default-only change, not a capability removal.
-            projection_envelope: false,
             projection_envelope_v2: false,
             auxiliary_rest_to_ws_v1: true,
             coding_autonomy_v1: true,
@@ -2195,7 +2165,6 @@ impl ConnectionUiFeatures {
             voice_asr_admission_v1: has(APPUI_FEATURE_VOICE_ASR_ADMISSION_V1),
             plan_todos: has(UI_PROTOCOL_FEATURE_PLAN_TODOS_V1),
             background_activity: has(UI_PROTOCOL_FEATURE_BACKGROUND_ACTIVITY_V1),
-            projection_envelope: has(UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V1),
             projection_envelope_v2: has(UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V2),
             auxiliary_rest_to_ws_v1: has(UI_PROTOCOL_FEATURE_AUXILIARY_REST_TO_WS_V1),
             coding_autonomy_v1: has(UI_PROTOCOL_FEATURE_CODING_AUTONOMY_V1),
@@ -2277,9 +2246,6 @@ impl ConnectionUiFeatures {
         }
         if self.background_activity {
             requested.push(UI_PROTOCOL_FEATURE_BACKGROUND_ACTIVITY_V1);
-        }
-        if self.projection_envelope {
-            requested.push(UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V1);
         }
         if self.projection_envelope_v2 {
             requested.push(UI_PROTOCOL_FEATURE_PROJECTION_ENVELOPE_V2);
@@ -15906,32 +15872,44 @@ fn raw_peer_gather(
         )));
     };
     let peers_root = runtime.data_dir.join("peers");
-    let peers: Vec<Value> = read_peer_blackboard(&peers_root, params.slugs.as_deref())
-        .into_iter()
-        .map(|row| {
-            json!({
-                "slug": row.slug,
-                "name": row.name,
-                "topic": format!("peer-{}", row.slug),
-                "brief": row.brief,
-                "brief_truncated": row.brief_truncated,
-                "result": row.result,
-                "result_truncated": row.result_truncated,
-                "result_updated_unix": row.result_updated_unix,
-                "has_worktree": row.has_worktree,
-                "closed": row.closed,
-                "turn_history": row.turn_history.as_ref().map(|history| {
-                    history.iter().map(|(count, outcome, ts)| {
-                        json!({
-                            "turn": count,
-                            "outcome": outcome,
-                            "updated_unix": ts,
-                        })
-                    }).collect::<Vec<_>>()
-                }),
+    let peers: Vec<Value> =
+        read_peer_blackboard_with_profile(&peers_root, params.slugs.as_deref(), &profile_id)
+            .into_iter()
+            .map(|row| {
+                json!({
+                    "slug": row.slug,
+                    "name": row.name,
+                    "topic": format!("peer-{}", row.slug),
+                    "brief": row.brief,
+                    "brief_truncated": row.brief_truncated,
+                    "result": row.result,
+                    "result_truncated": row.result_truncated,
+                    "result_updated_unix": row.result_updated_unix,
+                    "has_worktree": row.has_worktree,
+                    "closed": row.closed,
+                    "turn_history": row.turn_history.as_ref().map(|history| {
+                        history.iter().map(|(count, outcome, ts)| {
+                            json!({
+                                "turn": count,
+                                "outcome": outcome,
+                                "updated_unix": ts,
+                            })
+                        }).collect::<Vec<_>>()
+                    }),
+                    // task-evo-peer-turn-status — the execution facet fields
+                    // (same derivation as the CLI rows; see
+                    // docs/peer-status-interface.json).
+                    "execution": row.execution_facet.execution,
+                    "last_outcome": row.execution_facet.last_outcome,
+                    "round": row.execution_facet.round,
+                    "rounds_delivered": row.execution_facet.rounds_delivered,
+                    "master_session_id": row.execution_facet.master_session_id,
+                    "task_id": row.execution_facet.task_id,
+                    "generation": row.execution_facet.generation,
+                    "turn_id": row.execution_facet.turn_id,
+                })
             })
-        })
-        .collect();
+            .collect();
     Ok(json!({ "profile_id": profile_id, "peers": peers }))
 }
 
@@ -16177,13 +16155,17 @@ fn commit_gathered_peer_results(
 }
 
 #[cfg(test)]
-fn build_peer_gather_callback(peers_root: PathBuf) -> octos_agent::PeerGatherCallback {
-    build_peer_gather_callback_for_turn(peers_root, None)
+fn build_peer_gather_callback(
+    peers_root: PathBuf,
+    profile_id: String,
+) -> octos_agent::PeerGatherCallback {
+    build_peer_gather_callback_for_turn(peers_root, None, profile_id)
 }
 
 fn build_peer_gather_callback_for_turn(
     peers_root: PathBuf,
     consumption: Option<(SessionKey, GatheredPeerResults)>,
+    profile_id: String,
 ) -> octos_agent::PeerGatherCallback {
     Arc::new(move |idents: Option<Vec<String>>| {
         // The model may pass peer NAMES or slugs; resolve each to a slug for
@@ -16194,7 +16176,10 @@ fn build_peer_gather_callback_for_turn(
                 .filter_map(|ident| resolve_peer_name_to_slug(&peers_root, ident))
                 .collect::<Vec<_>>()
         });
-        let rows = read_peer_blackboard(&peers_root, slugs.as_deref());
+        // task-evo-peer-turn-status — the gather tool reads under the
+        // CALLER'S profile so non-default profiles' valid lifetimes are not
+        // demoted to unknown by an "octos" default (outer-loop review).
+        let rows = read_peer_blackboard_with_profile(&peers_root, slugs.as_deref(), &profile_id);
         let (output, output_truncated) = compose_peer_gather_text_with_truncation(&rows);
         // A budget-capped gather is not proof the model saw every result.
         if !output_truncated
@@ -19036,14 +19021,13 @@ async fn handle_session_open(
     // so dropping them is not lossy from their perspective.
     //
     // Reusing the helper keeps replay and live capability behavior in lockstep.
+    //
+    // No profile-scope arm here: `open_session_result` already retained this
+    // exact vector against this exact scope (`outcome.profile_scope`), so a
+    // second filter could never fire — and reading it as an independent gate
+    // would overstate the delivery path's defences.
     for event in outcome.replay {
-        if !ledger_event_matches_profile_scope(&event.event, outcome.profile_scope.as_deref()) {
-            continue;
-        }
-        let projected = features
-            .projection_envelope_v2
-            .then(|| project_v2_ledger_event(ledger, &event.event, &event.cursor))
-            .flatten();
+        let projected = project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor);
         let event_for_wire = context_event_for_features(projected.unwrap_or(event.event), features);
         if !live_event_passes_capability_filter(&event_for_wire, features) {
             continue;
@@ -19189,9 +19173,9 @@ fn ledger_event_matches_topic_scope(
 }
 
 /// #2067 — a durable event that names a profile must reach ONLY connections
-/// resolved to that profile. This filter runs at all three delivery boundaries
-/// (the `replay.retain` in `open_session_result`, the session/open replay send
-/// loop, and the live forwarder pump), so a variant it does not recognise
+/// resolved to that profile. This filter runs at both delivery boundaries
+/// (the `replay.retain` in `open_session_result` and the live forwarder
+/// pump), so a variant it does not recognise
 /// leaks across tenants on every shared/unprofiled wire session key — which is
 /// exactly what `session/goal/updated` and `session/goal/cleared` did — and
 /// what the `loop/*` and `monitor/*` frames beside them did, since most of them
@@ -19449,10 +19433,7 @@ async fn forward_live_ledger_event(
     if !ledger_event_matches_profile_scope(&event.event, profile_scope) {
         return Ok(());
     }
-    let projected = features
-        .projection_envelope_v2
-        .then(|| project_v2_ledger_event(ledger, &event.event, &event.cursor))
-        .flatten();
+    let projected = project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor);
     let event_for_wire = context_event_for_features(projected.unwrap_or(event.event), features);
     if !live_event_passes_capability_filter(&event_for_wire, features) {
         return Ok(());
@@ -19585,15 +19566,18 @@ async fn spawn_live_forwarder(
     forwarders.lock().await.insert(session_id, task);
 }
 
-/// Build the Stage-1 v2 projection for one already-durable source event.
+/// Project one durable ledger event onto the canonical v2 wire envelope.
 ///
-/// The returned notification is a *wire projection*, not a second ledger
-/// append. Its cursor is the cursor of `event`, so enabling v2 cannot shift a
-/// legacy client's cursor sequence or otherwise alter its bytes. V1 envelope
-/// rows remain the durable source for streamed content; legacy terminal,
-/// attachment, and background-completion rows fill the v2 gaps that v1 could
-/// not represent canonically.
-fn project_v2_ledger_event(
+/// Assistant/reasoning/tool content is already stored as native
+/// [`UiNotification::EnvelopeV2`] and passes through unchanged. The server's
+/// internal turn-lifecycle notifications — `TurnCompleted`, `TurnError`,
+/// `FileAttached`, `TurnSpawnComplete` — are kept in the ledger for turn-state
+/// and replay, and are projected here into their canonical v2 shape
+/// (`TurnTerminal`, `FileAttached`, `BackgroundChildCompleted`) so the client
+/// only ever sees the single v2 wire contract. This is a *wire projection*,
+/// not a second ledger append: the returned notification carries the source
+/// event's cursor, so it never shifts the durable sequence.
+fn project_lifecycle_event_to_v2_wire(
     ledger: &UiProtocolLedger,
     event: &UiProtocolLedgerEvent,
     cursor: &UiCursor,
@@ -19604,86 +19588,6 @@ fn project_v2_ledger_event(
 
     let projection = match notification {
         UiNotification::EnvelopeV2(envelope) => envelope.clone(),
-        UiNotification::Envelope(envelope) => {
-            let source = &envelope.envelope;
-            let assistant_segment_id = || {
-                format!(
-                    "{}:assistant:{}",
-                    source.thread_id,
-                    ledger.projection_v2_assistant_segment_index(
-                        &envelope.session_id,
-                        &source.thread_id,
-                        cursor.seq,
-                    )
-                )
-            };
-            let payload = match &source.payload {
-                Payload::UserMessage { text, files } => PayloadV2::UserMessage {
-                    text: text.clone(),
-                    files: files.clone(),
-                },
-                Payload::AssistantDelta { text } => PayloadV2::AssistantDelta {
-                    text: text.clone(),
-                    assistant_segment_id: assistant_segment_id(),
-                },
-                Payload::ReasoningDelta { text } => {
-                    PayloadV2::ReasoningDelta { text: text.clone() }
-                }
-                Payload::AssistantPersisted { text, meta } => PayloadV2::AssistantPersisted {
-                    text: text.clone(),
-                    assistant_segment_id: assistant_segment_id(),
-                    meta: meta.clone(),
-                },
-                Payload::ToolStart {
-                    tool_call_id,
-                    name,
-                    arguments_preview,
-                } => PayloadV2::ToolStart {
-                    tool_call_id: tool_call_id.clone(),
-                    name: name.clone(),
-                    arguments_preview: arguments_preview.clone(),
-                },
-                Payload::ToolProgress {
-                    tool_call_id,
-                    message,
-                } => PayloadV2::ToolProgress {
-                    tool_call_id: tool_call_id.clone(),
-                    message: message.clone(),
-                },
-                Payload::ToolEnd {
-                    tool_call_id,
-                    status,
-                    error,
-                    reason,
-                    output_preview,
-                    duration_ms,
-                } => PayloadV2::ToolEnd {
-                    tool_call_id: tool_call_id.clone(),
-                    status: *status,
-                    error: error.clone(),
-                    reason: reason.clone(),
-                    output_preview: output_preview.clone(),
-                    duration_ms: *duration_ms,
-                },
-                // File ownership and all terminal outcomes originate from
-                // their richer legacy source events below. Mapping these v1
-                // payloads too would create duplicates and lose ownership /
-                // errored / interrupted information.
-                Payload::FileAttached { .. } | Payload::TurnCompleted { .. } => return None,
-            };
-            EnvelopeV2Notification {
-                session_id: envelope.session_id.clone(),
-                topic: envelope.topic.clone(),
-                envelope: EnvelopeV2 {
-                    thread_id: source.thread_id.clone(),
-                    seq: source.seq,
-                    cursor: Some(cursor.clone()),
-                    turn_id: source.thread_id.clone(),
-                    client_message_id: source.client_message_id.clone(),
-                    payload,
-                },
-            }
-        }
         UiNotification::TurnCompleted(completed) => {
             let thread_id = completed.turn_id.0.to_string();
             EnvelopeV2Notification {
@@ -19859,25 +19763,24 @@ fn live_event_passes_capability_filter(
         return true;
     }
 
-    // A v2-capable connection receives only projections for source records.
-    // Keep this branch before the historical capability gates below so a
-    // replayed source event cannot leak beside its v2 projection.
-    if features.projection_envelope_v2 {
-        if let UiProtocolLedgerEvent::Notification(
-            UiNotification::Envelope(_)
-            | UiNotification::MessageDelta(_)
-            | UiNotification::ReasoningDelta(_)
-            | UiNotification::ToolStarted(_)
-            | UiNotification::ToolProgress(_)
-            | UiNotification::ToolCompleted(_)
-            | UiNotification::FileAttached(_)
-            | UiNotification::TurnCompleted(_)
-            | UiNotification::TurnError(_)
-            | UiNotification::TurnSpawnComplete(_),
-        ) = event
-        {
-            return false;
-        }
+    // Every connection is a canonical v2 consumer. A source lifecycle record
+    // is superseded by its v2 projection (native envelope or projected
+    // terminal / file / background-child), so the raw record is never
+    // delivered on the wire — a replayed source event cannot leak beside its
+    // projection. Keep this before the historical capability gates below.
+    if let UiProtocolLedgerEvent::Notification(
+        UiNotification::MessageDelta(_)
+        | UiNotification::ReasoningDelta(_)
+        | UiNotification::ToolStarted(_)
+        | UiNotification::ToolProgress(_)
+        | UiNotification::ToolCompleted(_)
+        | UiNotification::FileAttached(_)
+        | UiNotification::TurnCompleted(_)
+        | UiNotification::TurnError(_)
+        | UiNotification::TurnSpawnComplete(_),
+    ) = event
+    {
+        return false;
     }
     if !features.context_lifecycle_available() {
         if let UiProtocolLedgerEvent::Notification(
@@ -19982,44 +19885,6 @@ fn live_event_passes_capability_filter(
         {
             return false;
         }
-    }
-    // UPCR-2026-014 M9-γ cutover: per-connection mutual exclusion.
-    //
-    // Connections that NEGOTIATED `projection.envelope.v1` see historical
-    // v1 projection envelopes only — the legacy notifications
-    // they supersede are filtered out on this side. Connections that did
-    // NOT negotiate see legacy notifications ONLY — envelopes are
-    // filtered out. This is the cutover gate that makes the M9-γ
-    // projection contract enforceable end-to-end without dual-rendering
-    // the same logical event in two shapes.
-    //
-    // Legacy events superseded by envelopes per spec § 14.7:
-    //   - message/delta             → assistant_delta envelope
-    //   - message/reasoning_delta   → reasoning_delta envelope
-    //   - tool/started              → tool_start envelope
-    //   - tool/progress             → tool_progress envelope
-    //   - tool/completed            → tool_end envelope
-    //   - file/attached             → file_attached envelope
-    //   - turn/completed            → turn_completed envelope
-    //
-    // Note: the legacy *emit* sites stay in place — clients that did
-    // NOT negotiate the feature still need them. What this gate
-    // changes is the per-connection wire delivery.
-    if features.projection_envelope {
-        if let UiProtocolLedgerEvent::Notification(
-            UiNotification::MessageDelta(_)
-            | UiNotification::ReasoningDelta(_)
-            | UiNotification::ToolStarted(_)
-            | UiNotification::ToolProgress(_)
-            | UiNotification::ToolCompleted(_)
-            | UiNotification::FileAttached(_)
-            | UiNotification::TurnCompleted(_),
-        ) = event
-        {
-            return false;
-        }
-    } else if let UiProtocolLedgerEvent::Notification(UiNotification::Envelope(_)) = event {
-        return false;
     }
     true
 }
@@ -25049,7 +24914,7 @@ async fn handle_session_hydrate(
                 .iter()
                 .filter_map(|event| {
                     let UiProtocolLedgerEvent::Notification(UiNotification::EnvelopeV2(envelope)) =
-                        project_v2_ledger_event(ledger, &event.event, &event.cursor)?
+                        project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor)?
                     else {
                         return None;
                     };
@@ -25070,7 +24935,7 @@ async fn handle_session_hydrate(
                 .iter()
                 .filter_map(|event| {
                     let UiProtocolLedgerEvent::Notification(UiNotification::EnvelopeV2(envelope)) =
-                        project_v2_ledger_event(ledger, &event.event, &event.cursor)?
+                        project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor)?
                     else {
                         return None;
                     };
@@ -25101,7 +24966,7 @@ async fn handle_session_hydrate(
             .filter(|event| event.cursor.seq <= head_cursor.seq)
             .filter_map(|event| {
                 let UiProtocolLedgerEvent::Notification(UiNotification::EnvelopeV2(envelope)) =
-                    project_v2_ledger_event(ledger, &event.event, &event.cursor)?
+                    project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor)?
                 else {
                     return None;
                 };
@@ -31808,7 +31673,7 @@ print(f"{agent_id}: {finding}")
             spec.title, spec.agent_id, spec.artifact_id
         ),
     });
-    emit_envelope_for_legacy_notification(&ledger, &session_id, &delta);
+    emit_progress_envelope(&ledger, &session_id, &delta, None);
     let _ = send_notification_ephemeral(&ws, &ledger, delta);
     append_appui_evidence_jsonl(
         "agent-ledger.jsonl",
@@ -32240,6 +32105,63 @@ impl ChildStreamCoalescer {
 ///   verifier call exactly like the autonomous sites (#1958 codex #3).
 ///
 /// Returns whether the goal was flipped to `complete`.
+/// Structured result of the interactive sentinel completion check
+/// (evo-goal-verifier M1/cross A2): `completed` keeps the old bool contract;
+/// `failure` carries the structured verifier outcome line when the agent
+/// CLAIMED completion but verification refused it — previously the kind was
+/// dropped at this station entirely.
+struct InteractiveSentinelOutcome {
+    /// Old bool contract preserved: did the goal actually flip to complete?
+    completed: bool,
+    /// Canonical Display line (`verifier {kind} (attempt n/2): …`) plus the
+    /// raw kind for callers that want to key off the classification.
+    failure: Option<(&'static str, String)>,
+}
+
+/// evo-goal-verifier M1: the verifier-failure notification the AUTONOMOUS
+/// station emits. Its `session_id` argument is the turn's plain WIRE
+/// session id (`params.session_id`) — the goal record is addressed
+/// separately through the scoped `goal_ctx.goal_session_key` (see the
+/// accountant block) — so no scope stripping is needed here. The
+/// INTERACTIVE station uses `goal_verifier_failure_warning`, which DOES
+/// strip the cwd-scope suffix because its caller holds the turn-pinned
+/// scoped goal key.
+fn goal_verifier_warning_event(
+    session_id: &SessionKey,
+    outcome: &crate::autonomy::goal_loop_runtime::GoalVerifierOutcome,
+) -> UiNotification {
+    UiNotification::Warning(octos_core::ui_protocol::WarningEvent {
+        session_id: session_id.clone(),
+        turn_id: None,
+        code: format!(
+            "goal_verifier_{}",
+            outcome.kind.map(|k| k.as_str()).unwrap_or("unknown")
+        ),
+        message: format!("goal completion not verified — {outcome}"),
+    })
+}
+
+/// Same wire shape for the interactive consumer, which holds the already-
+/// rendered canonical (kind, line) pair from `InteractiveSentinelOutcome`.
+fn goal_verifier_failure_warning(
+    session_id: &SessionKey,
+    kind: &str,
+    line: &str,
+) -> UiNotification {
+    // merged-review 2026-09-10 Fix 1: the WarningEvent carries the WIRE
+    // session id. Goal lookups keep the scoped key; this shared
+    // constructor is the single production boundary that strips the
+    // `\0~cwd-…` scope suffix, so every caller (the interactive sentinel
+    // consumer in `run_standalone_turn` and the tests) routes through the
+    // SAME normalization.
+    UiNotification::Warning(octos_core::ui_protocol::WarningEvent {
+        session_id: crate::autonomy::agent_orchestrator::wire_key_from_goal_key(session_id),
+        turn_id: None,
+        code: format!("goal_verifier_{kind}"),
+        message: format!("goal completion not verified — {line}"),
+    })
+}
+
 async fn run_interactive_sentinel_completion(
     orchestrator: &InProcessAgentOrchestrator,
     verifier_provider: Arc<dyn octos_llm::LlmProvider>,
@@ -32248,17 +32170,23 @@ async fn run_interactive_sentinel_completion(
     bound_goal_id: &str,
     reply: &str,
     ledger_data_dir: Option<&Path>,
-) -> bool {
+) -> InteractiveSentinelOutcome {
     // Loop-engineering completion gate: only spend the INDEPENDENT verifier
     // LLM call when the agent actually CLAIMS completion.
     if !orchestrator.goal_completion_claimed(reply) {
-        return false;
+        return InteractiveSentinelOutcome {
+            completed: false,
+            failure: None,
+        };
     }
     // #1935 codex round 3 (TOCTOU) — one-lock snapshot of (goal_id,
     // objective); no goal / wrong profile ⇒ nothing to verify.
     let Some(snapshot) = orchestrator.goal_verification_snapshot(pinned_goal_key, charge_profile)
     else {
-        return false;
+        return InteractiveSentinelOutcome {
+            completed: false,
+            failure: None,
+        };
     };
     // Dispatch-time binding check: a goal cleared+recreated mid-turn must
     // neither be graded against the OLD turn's claim nor spend a verifier
@@ -32270,39 +32198,60 @@ async fn run_interactive_sentinel_completion(
             current_goal_id = %snapshot.goal_id,
             "interactive sentinel: goal changed since dispatch — stale claim refused"
         );
-        return false;
+        return InteractiveSentinelOutcome {
+            completed: false,
+            failure: None,
+        };
     }
     // #1958 (codex #3) — the sentinel verifier runs AFTER the turn's routing
     // scopes ended; restore originating-session attribution around it. The
     // event carries the WIRE id, so strip the cwd scope off the pinned key.
-    let (verdict, verifier_usage) = octos_llm::with_router_context(
+    // evo-goal-verifier: the wrapper owns gate/charge/retry/ledger.
+    let outcome = octos_llm::with_router_context(
         octos_llm::RouterContext {
             session_id: Some(wire_key_from_goal_key(pinned_goal_key).to_string()),
             ..Default::default()
         },
-        run_goal_completion_verifier_with_usage(verifier_provider, &snapshot.objective, reply),
+        orchestrator.verify_goal_completion_bounded(
+            pinned_goal_key,
+            charge_profile,
+            &snapshot,
+            verifier_provider,
+            reply,
+            ledger_data_dir,
+        ),
     )
     .await;
-    // #1958 — fold the verifier's real spend into the goal before the flip.
-    // The returned chip event is intentionally dropped: the caller's
-    // unconditional interactive repaint pushes the final snapshot.
-    let _ = orchestrator.charge_goal_verifier_usage(
-        pinned_goal_key,
-        charge_profile,
-        Some(&snapshot.goal_id),
-        &verifier_usage,
-    );
-    orchestrator.maybe_complete_goal_from_model(
+    let completed = orchestrator.maybe_complete_goal_from_model(
         pinned_goal_key,
         charge_profile,
         reply,
-        &verdict,
+        &outcome.verdict,
         // #1935 codex round 3 — both snapshot fields are re-checked against
         // the live record inside; a mid-verify swap or objective edit refuses.
         &snapshot,
         // #1957 (codex #1) — sync a sentinel completion into the ledger.
         ledger_data_dir,
-    )
+    );
+    InteractiveSentinelOutcome {
+        completed,
+        failure: if completed || outcome.is_done() {
+            None
+        } else {
+            // M1/cross A2: structured failure line leaves this station now —
+            // the kind is no longer dropped. Ephemeral consumer decides how
+            // to surface it (SessionGoalUpdated schema stays untouched).
+            tracing::warn!(
+                session_id = %pinned_goal_key,
+                goal_id = %snapshot.goal_id,
+                "interactive sentinel completion not verified: {outcome}"
+            );
+            Some((
+                outcome.kind.map(|k| k.as_str()).unwrap_or("unknown"),
+                outcome.to_string(),
+            ))
+        },
+    }
 }
 
 /// #1969 — resolve the token charge for a turn that may have been INTERRUPTED.
@@ -33907,6 +33856,7 @@ async fn run_standalone_turn(
             let gather = build_peer_gather_callback_for_turn(
                 session_runtime.profile.data_dir.join("peers"),
                 Some((session_id.clone(), gathered_peer_results.clone())),
+                session_runtime.profile.profile_id.clone(),
             );
             tool_registry.register(octos_agent::PeerGatherTool::new(gather));
         }
@@ -34612,6 +34562,13 @@ async fn run_standalone_turn(
     if let Some(hooks) = session_runtime.profile.hook_executor.clone() {
         request_agent = request_agent.with_hooks(hooks);
     }
+    // #2246 — the per-turn rebuild starts from `Agent::new_shared`, so the
+    // bootstrap agent's hook context does not carry over; re-apply it here
+    // (same ids the session's spawn tool receives above).
+    request_agent = request_agent.with_hook_context(octos_agent::HookContext {
+        session_id: Some(session_id.to_string()),
+        profile_id: Some(session_runtime.profile.profile_id.clone()),
+    });
     // Phase 3-A plumbing follow-up (Phase 1 gap): propagate the
     // `SessionScope` the cached `SessionRuntime` constructed at
     // `runtime/session.rs::bootstrap` onto this per-turn rebuilt agent.
@@ -36600,7 +36557,7 @@ async fn run_standalone_turn(
                 .goal_verifier_llm
                 .clone()
                 .unwrap_or_else(|| llm_provider.clone());
-            let _ = run_interactive_sentinel_completion(
+            let sentinel_outcome = run_interactive_sentinel_completion(
                 default_agent_orchestrator(),
                 verifier_provider,
                 &turn_pinned_goal_key,
@@ -36613,6 +36570,22 @@ async fn run_standalone_turn(
                 Some(session_runtime.profile.data_dir.as_path()),
             )
             .await;
+            // evo-goal-verifier M1 (cross A2): surface the structured
+            // verifier failure (kind + canonical line) as an ephemeral note
+            // on the interactive path — SessionGoalUpdated schema untouched.
+            if sentinel_outcome.completed {
+                tracing::debug!(
+                    session_id = %turn_pinned_goal_key,
+                    "interactive sentinel flipped goal to complete"
+                );
+            }
+            if let Some((kind, line)) = sentinel_outcome.failure {
+                let _ = send_notification_ephemeral(
+                    &ws,
+                    &ledger,
+                    goal_verifier_failure_warning(&turn_pinned_goal_key, kind, &line),
+                );
+            }
         }
     }
     // #1650 — release the in-flight marker now that the charge has
@@ -37451,31 +37424,23 @@ async fn run_standalone_turn(
                 // attribution around it (a failover would otherwise publish
                 // unattributed / under another session). Autonomous turns are
                 // Normal policy, so only the router context needs restoring.
-                let (verdict, verifier_usage) = octos_llm::with_router_context(
+                // evo-goal-verifier: the wrapper owns gate/charge/retry/ledger;
+                // per-attempt usage is charged inside it.
+                let outcome = octos_llm::with_router_context(
                     octos_llm::RouterContext {
                         session_id: Some(session_id.to_string()),
                         ..Default::default()
                     },
-                    run_goal_completion_verifier_with_usage(
+                    orchestrator.verify_goal_completion_bounded(
+                        goal_key,
+                        &goal_ctx.profile_id,
+                        &snapshot,
                         verifier_provider,
-                        &snapshot.objective,
                         &reply,
+                        Some(goal_ledger_data_dir.as_path()),
                     ),
                 )
                 .await;
-                // #1958 — the verifier call is real goal spend: fold it into
-                // the goal's tokens_used via the scoped key, BEFORE the
-                // completion flip below (a `complete` goal can no longer be
-                // charged). The returned chip event is dropped on purpose —
-                // the unconditional post-accountant push below emits the
-                // final snapshot (including this charge) to the owning
-                // connection.
-                let _ = orchestrator.charge_goal_verifier_usage(
-                    goal_key,
-                    &goal_ctx.profile_id,
-                    Some(&snapshot.goal_id),
-                    &verifier_usage,
-                );
                 // `maybe_complete_goal_from_model` is idempotent and only
                 // flips when `detect_goal_complete_sentinel` matches the
                 // tail of the reply AND the verdict is Done. The return value
@@ -37486,11 +37451,27 @@ async fn run_standalone_turn(
                     goal_key,
                     &goal_ctx.profile_id,
                     &reply,
-                    &verdict,
+                    &outcome.verdict,
                     &snapshot,
                     // #1957 (codex #1) — sync a sentinel completion into the ledger.
                     Some(goal_ledger_data_dir.as_path()),
                 );
+                // evo-goal-verifier M1 (cross A3): the AUTONOMOUS sentinel
+                // station also surfaces the structured failure kind — same
+                // canonical Display line, same ephemeral Warning channel,
+                // SessionGoalUpdated schema untouched.
+                if !outcome.is_done() {
+                    tracing::warn!(
+                        session_id = %session_id,
+                        goal_id = %snapshot.goal_id,
+                        "autonomous sentinel completion not verified: {outcome}"
+                    );
+                    let _ = send_notification_ephemeral(
+                        &ws,
+                        &ledger,
+                        goal_verifier_warning_event(&session_id.clone(), &outcome),
+                    );
+                }
             }
         }
         // #1696/#1698 — push the post-turn goal snapshot to the OWNING
@@ -37842,28 +37823,13 @@ async fn try_emit_terminal(
                     session_result: details.session_result,
                 }),
             );
-            // UPCR-2026-014 M9-γ dual-emit: parallel canonical
-            // `turn_completed` envelope. The hard-barrier inside
-            // `emit_envelope` flips the thread's `completed` flag, so
-            // any further envelope on the same thread is dropped at
-            // the live emit site (spec § 14.6). Token usage zero-fills
-            // reasoning / cache_read / cache_write until the upstream
-            // propagation lands (legacy `tokens_in`/`tokens_out` are
-            // `Option<u32>` and only the first two are populated
-            // today).
-            let token_usage = EnvelopeTokenUsage {
-                input_tokens: tokens_in.map(u64::from).unwrap_or(0),
-                output_tokens: tokens_out.map(u64::from).unwrap_or(0),
-                reasoning_tokens: 0,
-                cache_read_tokens: 0,
-                cache_write_tokens: 0,
-            };
-            let _ = ledger.emit_envelope(
-                session_id,
-                turn_id.0.to_string(),
-                Payload::TurnCompleted { token_usage },
-                None,
-            );
+            // The canonical `turn_completed` terminal reaches the client as a
+            // native v2 `TurnTerminal`, projected from the lifecycle
+            // `UiNotification::TurnCompleted` emitted above (see
+            // `project_lifecycle_event_to_v2_wire`) — the same path errored and
+            // interrupted terminals already take. No separate envelope is
+            // emitted here.
+            let _ = (tokens_in, tokens_out);
         }
         TerminalReason::Errored => {
             // A pre-dispatch failure (for example peer lifetime persistence)
@@ -37986,106 +37952,6 @@ fn envelope_tool_arguments_preview(arguments: &Value) -> String {
     )
 }
 
-/// reachable through `ToolCompleted` today.
-fn emit_envelope_for_legacy_notification(
-    ledger: &UiProtocolLedger,
-    session_id: &SessionKey,
-    notification: &UiNotification,
-) {
-    use octos_core::ui_protocol::EnvelopeToolEndStatus;
-    let (thread_id, payload, client_message_id): (String, Payload, Option<String>) =
-        match notification {
-            UiNotification::MessageDelta(event) => (
-                event.turn_id.0.to_string(),
-                Payload::AssistantDelta {
-                    text: event.text.clone(),
-                },
-                None,
-            ),
-            UiNotification::ReasoningDelta(event) => (
-                event.turn_id.0.to_string(),
-                Payload::ReasoningDelta {
-                    text: event.text.clone(),
-                },
-                None,
-            ),
-            UiNotification::ToolStarted(event) => (
-                event.turn_id.0.to_string(),
-                Payload::ToolStart {
-                    tool_call_id: event.tool_call_id.clone(),
-                    name: event.tool_name.clone(),
-                    // Display fidelity for the tool card (`shell(cd … && …)`),
-                    // bounded so a 1MB tool-arg blob never lands in every
-                    // persisted envelope + hydrate replay.
-                    arguments_preview: event
-                        .arguments
-                        .as_ref()
-                        .map(envelope_tool_arguments_preview)
-                        // `{}` args render as "" — the spec says omit, not
-                        // empty-string.
-                        .filter(|preview| !preview.is_empty()),
-                },
-                None,
-            ),
-            UiNotification::ToolProgress(event) => {
-                let Some(message) = event.message.clone() else {
-                    return;
-                };
-                (
-                    event.turn_id.0.to_string(),
-                    Payload::ToolProgress {
-                        tool_call_id: event.tool_call_id.clone(),
-                        message,
-                    },
-                    None,
-                )
-            }
-            UiNotification::ToolCompleted(event) => {
-                let status = match event.success {
-                    Some(true) | None => EnvelopeToolEndStatus::Complete,
-                    Some(false) => EnvelopeToolEndStatus::Error,
-                };
-                let error = match status {
-                    // Bounded like `output_preview`: the error source can be
-                    // arbitrary-length tool output, and this string lands in
-                    // the durable ledger + every hydrate replay.
-                    EnvelopeToolEndStatus::Error => event.output_preview.as_deref().map(|s| {
-                        octos_core::truncated_utf8(
-                            s,
-                            octos_core::ui_protocol::ENVELOPE_TOOL_OUTPUT_PREVIEW_MAX,
-                            "…",
-                        )
-                    }),
-                    _ => None,
-                };
-                (
-                    event.turn_id.0.to_string(),
-                    Payload::ToolEnd {
-                        tool_call_id: event.tool_call_id.clone(),
-                        status,
-                        error,
-                        reason: None,
-                        // Result excerpt for the `⎿ …` line under the card.
-                        // `ToolCompletedEvent.output_preview` is already a
-                        // preview upstream; re-bound defensively so ledger
-                        // growth is capped no matter what the emitter sent.
-                        output_preview: event.output_preview.as_deref().map(|preview| {
-                            octos_core::truncated_utf8(
-                                preview,
-                                octos_core::ui_protocol::ENVELOPE_TOOL_OUTPUT_PREVIEW_MAX,
-                                "…",
-                            )
-                        }),
-                        duration_ms: event.duration_ms,
-                    },
-                    None,
-                )
-            }
-            _ => return,
-        };
-    let _ = ledger.emit_envelope(session_id, thread_id, payload, client_message_id);
-}
-
 async fn try_emit_completed_terminal_with_forced_backpressure(
     turn_state: &TokioMutex<TurnState>,
     ws: &WsConnection,
@@ -38133,30 +37999,118 @@ fn progress_assistant_iteration(event: &Value) -> Option<u32> {
 }
 
 /// Both ordinary and marker-filtered voice deltas use the producer identity.
+/// Emit one live progress notification as its native canonical v2 envelope.
+///
+/// This is the single lane: assistant/reasoning/tool content is written to the
+/// ledger directly as [`PayloadV2`], never as a legacy `Payload` row projected
+/// later. Assistant deltas keep the producer's iteration identity when one is
+/// present (the canonical persisted row adopts the same id, so streamed deltas
+/// and the persisted finalizer stitch into ONE segment); a delta without an
+/// iteration (e.g. a synthesized subagent line) falls back to the durable
+/// segment ordinal, matching what the persisted-row path would compute.
 fn emit_progress_envelope(
     ledger: &UiProtocolLedger,
     session_id: &SessionKey,
     notification: &UiNotification,
     iteration: Option<u32>,
 ) {
-    if let UiNotification::MessageDelta(delta) = notification
-        && let Some(iteration) = iteration
-    {
-        let thread = delta.turn_id.0.to_string();
-        let _ = ledger.emit_envelope_v2(
-            session_id,
-            thread.clone(),
-            PayloadV2::AssistantDelta {
-                text: delta.text.clone(),
-                assistant_segment_id: super::events::assistant_segment_id_for_iteration(
-                    &thread, iteration,
+    use octos_core::ui_protocol::EnvelopeToolEndStatus;
+    let (thread_id, payload): (String, PayloadV2) = match notification {
+        UiNotification::MessageDelta(event) => {
+            let thread = event.turn_id.0.to_string();
+            let assistant_segment_id = match iteration {
+                Some(iteration) => {
+                    super::events::assistant_segment_id_for_iteration(&thread, iteration)
+                }
+                None => format!(
+                    "{}:assistant:{}",
+                    thread,
+                    ledger.projection_v2_assistant_segment_index(session_id, &thread, u64::MAX)
                 ),
+            };
+            (
+                thread,
+                PayloadV2::AssistantDelta {
+                    text: event.text.clone(),
+                    assistant_segment_id,
+                },
+            )
+        }
+        UiNotification::ReasoningDelta(event) => (
+            event.turn_id.0.to_string(),
+            PayloadV2::ReasoningDelta {
+                text: event.text.clone(),
             },
-            None,
-        );
-    } else {
-        emit_envelope_for_legacy_notification(ledger, session_id, notification);
-    }
+        ),
+        UiNotification::ToolStarted(event) => (
+            event.turn_id.0.to_string(),
+            PayloadV2::ToolStart {
+                tool_call_id: event.tool_call_id.clone(),
+                name: event.tool_name.clone(),
+                // Display fidelity for the tool card (`shell(cd … && …)`),
+                // bounded so a 1MB tool-arg blob never lands in every
+                // persisted envelope + hydrate replay.
+                arguments_preview: event
+                    .arguments
+                    .as_ref()
+                    .map(envelope_tool_arguments_preview)
+                    // `{}` args render as "" — the spec says omit, not
+                    // empty-string.
+                    .filter(|preview| !preview.is_empty()),
+            },
+        ),
+        UiNotification::ToolProgress(event) => {
+            let Some(message) = event.message.clone() else {
+                return;
+            };
+            (
+                event.turn_id.0.to_string(),
+                PayloadV2::ToolProgress {
+                    tool_call_id: event.tool_call_id.clone(),
+                    message,
+                },
+            )
+        }
+        UiNotification::ToolCompleted(event) => {
+            let status = match event.success {
+                Some(true) | None => EnvelopeToolEndStatus::Complete,
+                Some(false) => EnvelopeToolEndStatus::Error,
+            };
+            let error = match status {
+                // Bounded like `output_preview`: the error source can be
+                // arbitrary-length tool output, and this string lands in
+                // the durable ledger + every hydrate replay.
+                EnvelopeToolEndStatus::Error => event.output_preview.as_deref().map(|s| {
+                    octos_core::truncated_utf8(
+                        s,
+                        octos_core::ui_protocol::ENVELOPE_TOOL_OUTPUT_PREVIEW_MAX,
+                        "…",
+                    )
+                }),
+                _ => None,
+            };
+            (
+                event.turn_id.0.to_string(),
+                PayloadV2::ToolEnd {
+                    tool_call_id: event.tool_call_id.clone(),
+                    status,
+                    error,
+                    reason: None,
+                    // Result excerpt for the `⎿ …` line under the card.
+                    output_preview: event.output_preview.as_deref().map(|preview| {
+                        octos_core::truncated_utf8(
+                            preview,
+                            octos_core::ui_protocol::ENVELOPE_TOOL_OUTPUT_PREVIEW_MAX,
+                            "…",
+                        )
+                    }),
+                    duration_ms: event.duration_ms,
+                },
+            )
+        }
+        _ => return,
+    };
+    let _ = ledger.emit_envelope_v2(session_id, thread_id, payload, None);
 }
 
 /// Dispatch a single non-terminal progress JSON value out to the WS / ledger.
@@ -40895,10 +40849,7 @@ fn send_notification_lifecycle(
     // ledger append above still happens so the canonical envelope
     // emit (via `ledger.emit_envelope` on the same handler path)
     // delivers via the broadcast forwarder.
-    let projected = features
-        .projection_envelope_v2
-        .then(|| project_v2_ledger_event(ledger, &event.event, &event.cursor))
-        .flatten();
+    let projected = project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor);
     let event_for_wire = context_event_for_features(projected.unwrap_or(event.event), features);
     let delivery_metric = ui_protocol_delivery_metric(&event_for_wire);
     let method = ledger_event_method(&event_for_wire).to_string();
@@ -41081,10 +41032,7 @@ fn send_notification_durable(
     // connections (without the feature) receive the legacy shape via
     // their own forwarders.
     let features = ws.snapshot_live_features();
-    let projected = features
-        .projection_envelope_v2
-        .then(|| project_v2_ledger_event(ledger, &event.event, &event.cursor))
-        .flatten();
+    let projected = project_lifecycle_event_to_v2_wire(ledger, &event.event, &event.cursor);
     let event_for_wire = context_event_for_features(projected.unwrap_or(event.event), features);
     let delivery_metric = ui_protocol_delivery_metric(&event_for_wire);
     let method = ledger_event_method(&event_for_wire).to_string();
@@ -41373,15 +41321,7 @@ fn ledger_event_cursor(event: &UiProtocolLedgerEvent) -> Option<UiCursor> {
             // #2019: the human sink carries an origin + text + timestamp, not
             // a replay cursor; the surrounding ledger event's cursor is what
             // a reconnecting client resumes from.
-            | UiNotification::BackgroundActivity(_)
-            // UPCR-2026-014 M9-γ: envelopes carry their OWN per-thread
-            // `seq` allocated by `ThreadSeqAllocator`, not the per-session
-            // `UiCursor` the legacy ledger replay uses. The durable
-            // ledger cursor on the surrounding `LedgeredUiProtocolEvent`
-            // is still authoritative for replay; envelopes don't
-            // contribute their per-thread seq into the cursor stream
-            // (which would mix two non-comparable scales).
-            | UiNotification::Envelope(_) => None,
+            | UiNotification::BackgroundActivity(_) => None,
         },
         UiProtocolLedgerEvent::Progress(_) => None,
     }
