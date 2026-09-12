@@ -73,7 +73,17 @@ const DEFAULT_PLUGIN_TIMEOUT_LIMIT: u32 = 3;
 const DEFAULT_PLUGIN_PROTOCOL_LIMIT: u32 = 2;
 const DEFAULT_DELEGATE_DEPTH_LIMIT: u32 = 1;
 const DEFAULT_INTERNAL_LIMIT: u32 = 1;
+/// Hook-deny (policy) errors escalate immediately — retrying a policy
+/// decision can never succeed (#2249).
+const DEFAULT_POLICY_LIMIT: u32 = 1;
 const DEFAULT_SHELL_SPIRAL_LIMIT: u32 = 1;
+
+/// `#[serde(default = "...")]` helper for `LoopRetryLimits::policy`. Lets
+/// legacy retry-state JSON (pre-policy field) deserialize cleanly with the
+/// canonical default instead of `0`, which would disable the bucket.
+fn default_policy_limit() -> u32 {
+    DEFAULT_POLICY_LIMIT
+}
 
 /// Per-bucket hard limits. Tuned for M6.2 defaults, exposed so integration
 /// tests and operators can override them if needed.
@@ -97,6 +107,10 @@ pub struct LoopRetryLimits {
     pub plugin_protocol: u32,
     pub delegate_depth_exceeded: u32,
     pub internal: u32,
+    /// Added with the PolicyDeny variant (#2249). `serde(default)` keeps
+    /// legacy retry-state sidecar JSON (pre-policy) deserializable.
+    #[serde(default = "default_policy_limit")]
+    pub policy: u32,
     pub shell_spiral: u32,
 }
 
@@ -118,6 +132,7 @@ impl Default for LoopRetryLimits {
             plugin_protocol: DEFAULT_PLUGIN_PROTOCOL_LIMIT,
             delegate_depth_exceeded: DEFAULT_DELEGATE_DEPTH_LIMIT,
             internal: DEFAULT_INTERNAL_LIMIT,
+            policy: DEFAULT_POLICY_LIMIT,
             shell_spiral: DEFAULT_SHELL_SPIRAL_LIMIT,
         }
     }
@@ -182,6 +197,11 @@ pub const SHELL_SPIRAL_VARIANT: &str = "shell_spiral";
 /// Per-variant counters. Each counter is bumped exactly once per observation
 /// and the corresponding limit from [`LoopRetryLimits`] is checked immediately
 /// so the caller never silently exceeds a bucket.
+///
+/// Fields are `pub` for direct reads and test/guard-path mutations, but the
+/// delta-merge (`saturating_add_turn_delta`) relies on every bucket being
+/// append-only: only ever increment, never decrement or reset (see its doc
+/// comment).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LoopRetryCounters {
     pub rate_limited: u32,
@@ -203,6 +223,11 @@ pub struct LoopRetryCounters {
     pub plugin_protocol: u32,
     pub delegate_depth_exceeded: u32,
     pub internal: u32,
+    /// Added with the PolicyDeny variant (#2249). `serde(default)` keeps
+    /// legacy retry-state sidecar JSON (pre-policy) deserializable; a
+    /// missing field deserializes to `0`.
+    #[serde(default)]
+    pub policy: u32,
     pub shell_spiral: u32,
 }
 
@@ -211,6 +236,12 @@ impl LoopRetryCounters {
     /// `base` it loaded from) onto `self` (#1655). Buckets only ever
     /// increment, so `saturating_sub` yields the turn's own increments and
     /// two overlapping turns both land in the merged state.
+    ///
+    /// Monotonicity is a load-bearing convention here (#2221): if a future
+    /// change ever decrements a bucket, `saturating_sub` clamps the negative
+    /// delta to zero and the decrement is silently dropped from the merge.
+    /// Bucket mutations must therefore only ever increment — all built-in
+    /// mutations go through `observe*` / `observe_shell_spiral`, which do.
     fn saturating_add_turn_delta(&mut self, base: &Self, turn: &Self) {
         self.rate_limited = self
             .rate_limited
@@ -259,6 +290,9 @@ impl LoopRetryCounters {
         self.internal = self
             .internal
             .saturating_add(turn.internal.saturating_sub(base.internal));
+        self.policy = self
+            .policy
+            .saturating_add(turn.policy.saturating_sub(base.policy));
         self.shell_spiral = self
             .shell_spiral
             .saturating_add(turn.shell_spiral.saturating_sub(base.shell_spiral));
@@ -497,6 +531,7 @@ impl LoopRetryState {
                 self.limits.delegate_depth_exceeded,
             ),
             HarnessError::Internal { .. } => (&mut self.counters.internal, self.limits.internal),
+            HarnessError::PolicyDeny { .. } => (&mut self.counters.policy, self.limits.policy),
         };
         *counter_ref = counter_ref.saturating_add(1);
         (*counter_ref, limit)
@@ -525,6 +560,9 @@ fn decide_for_variant(error: &HarnessError) -> LoopDecision {
         RecoveryHint::CompactContext => LoopDecision::CompactAndRetry,
         // Non-retryable, surface to operator.
         RecoveryHint::FailFast => LoopDecision::Escalate,
+        // Expected policy behaviour (hook deny) — not a fault; surface for
+        // audit, never retry (#2249).
+        RecoveryHint::Expected => LoopDecision::Escalate,
         // Internal invariant violation — bug, not recoverable.
         RecoveryHint::Bug => LoopDecision::Escalate,
     }
@@ -677,6 +715,111 @@ mod tests {
         });
         assert_eq!(state.observe_shell_spiral(), LoopDecision::Escalate);
         assert_eq!(state.observe_shell_spiral(), LoopDecision::Exhausted);
+    }
+
+    #[test]
+    fn should_merge_every_field_when_turn_delta_applied() {
+        // Field-coverage guard (#2221): the literals below name EVERY field
+        // of `LoopRetryState`, `LoopRetryCounters`, and `LoopRetryLimits`
+        // with no `..Default::default()` spread, so adding a field to any of
+        // the three structs fails THIS test's compilation — forcing the
+        // author to extend `merge_turn_delta` (and
+        // `LoopRetryCounters::saturating_add_turn_delta`) in the same commit.
+        // `turn` also gives each field a DISTINCT delta over `base`
+        // (2 + field offset), so the final whole-struct equality catches
+        // both a forgotten merge line (the field keeps self's value) and a
+        // mis-wired one (a copy-pasted line reading the wrong base/turn
+        // field lands the wrong delta).
+        let uniform_counters = |v: u32| LoopRetryCounters {
+            rate_limited: v,
+            context_overflow: v,
+            authentication: v,
+            quota: v,
+            invalid_request: v,
+            content_filtered: v,
+            provider_unavailable: v,
+            network: v,
+            timeout: v,
+            tool_execution: v,
+            plugin_spawn: v,
+            plugin_timeout: v,
+            plugin_protocol: v,
+            delegate_depth_exceeded: v,
+            internal: v,
+            policy: v,
+            shell_spiral: v,
+        };
+        let offset_counters = |v: u32| LoopRetryCounters {
+            rate_limited: v,
+            context_overflow: v + 1,
+            authentication: v + 2,
+            quota: v + 3,
+            invalid_request: v + 4,
+            content_filtered: v + 5,
+            provider_unavailable: v + 6,
+            network: v + 7,
+            timeout: v + 8,
+            tool_execution: v + 9,
+            plugin_spawn: v + 10,
+            plugin_timeout: v + 11,
+            plugin_protocol: v + 12,
+            delegate_depth_exceeded: v + 13,
+            internal: v + 14,
+            policy: v + 15,
+            shell_spiral: v + 16,
+        };
+        let uniform_limits = |v: u32| LoopRetryLimits {
+            rate_limited: v,
+            context_overflow: v,
+            authentication: v,
+            quota: v,
+            invalid_request: v,
+            content_filtered: v,
+            provider_unavailable: v,
+            network: v,
+            timeout: v,
+            tool_execution: v,
+            plugin_spawn: v,
+            plugin_timeout: v,
+            plugin_protocol: v,
+            delegate_depth_exceeded: v,
+            internal: v,
+            policy: v,
+            shell_spiral: v,
+        };
+
+        let base = LoopRetryState {
+            counters: uniform_counters(1),
+            limits: uniform_limits(100),
+            productive_tool_calls_since_last_grace: 1,
+            grace_calls_fired: 1,
+        };
+        let turn = LoopRetryState {
+            counters: offset_counters(3),
+            limits: uniform_limits(200),
+            productive_tool_calls_since_last_grace: 4,
+            grace_calls_fired: 2,
+        };
+        let mut merged = LoopRetryState {
+            counters: uniform_counters(10),
+            limits: uniform_limits(300),
+            productive_tool_calls_since_last_grace: 5,
+            grace_calls_fired: 5,
+        };
+        merged.merge_turn_delta(&base, &turn);
+
+        let expected = LoopRetryState {
+            // 10 + ((3 + i) - 1) = 12 + i: each bucket gains exactly its OWN
+            // turn delta, so a cross-field mis-wire flips the value.
+            counters: offset_counters(12),
+            // Static configuration, taken wholesale from `turn`.
+            limits: uniform_limits(200),
+            // 5 + (4 - 1): signed delta for the non-monotonic field.
+            productive_tool_calls_since_last_grace: 8,
+            // 5 + (2 - 1): monotonic saturating delta.
+            grace_calls_fired: 6,
+        };
+        assert_eq!(merged, expected);
     }
 
     #[test]
