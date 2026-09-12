@@ -1437,8 +1437,18 @@ mod tests {
         });
 
         let logs = captured.as_string();
-        assert_eq!(logs.matches("path=/api/ui-protocol/ws").count(), 2);
-        assert_eq!(logs.matches("token_present=true").count(), 2);
+        // #2276: on failure print the FULL captured logs — the flake's
+        // evidence (span death) is invisible without them.
+        assert_eq!(
+            logs.matches("path=/api/ui-protocol/ws").count(),
+            2,
+            "logs:\n{logs}"
+        );
+        assert_eq!(
+            logs.matches("token_present=true").count(),
+            2,
+            "logs:\n{logs}"
+        );
         assert!(!logs.contains(query));
         assert!(!logs.contains(token));
         assert!(!logs.contains("synthetic-sensitive-marker"));
